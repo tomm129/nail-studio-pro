@@ -589,7 +589,10 @@
         </div>
     </div>
 
-    <div class="versao">Nail Studio Pro • versão 1.4 (27/09)</div>
+    <div class="versao">
+        Nail Studio Pro • versão 1.5 (27/09)
+        <div id="diag"></div>
+    </div>
 
     <!-- Modal de Configuração -->
     <div class="modal-overlay" id="configModal">
@@ -631,16 +634,52 @@
 
         // ===== Persistência =====
         function salvarDados() {
+            if (bloquearGravacao) {
+                alert('⚠️ Os dados salvos neste aparelho não puderam ser lidos. Para não apagá-los, nada foi gravado. Entre em contato com o suporte.');
+                return;
+            }
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify({
                     agendamentos, clientes, nextId, nextClienteId, config: CONFIG, ordem: ORDEM_SERVICOS
                 }));
             } catch (e) { console.warn('Falha ao salvar', e); }
+            atualizarDiagnostico();
         }
-        function carregarDados() {
+        const BACKUP_KEY = STORAGE_KEY + '.backup';
+        // Se os dados salvos não puderem ser lidos, o app não grava por cima deles
+        let bloquearGravacao = false;
+
+        function contarRegistros(raw) {
+            try { const d = JSON.parse(raw); return (d.agendamentos || []).length + (d.clientes || []).length; }
+            catch (e) { return -1; }
+        }
+        // Cópia de segurança do que estava salvo ao abrir o app. Só é trocada por uma
+        // versão com pelo menos a mesma quantidade de registros, então nunca encolhe sozinha.
+        function guardarBackup(raw) {
+            try {
+                const atual = localStorage.getItem(BACKUP_KEY);
+                if (!atual || contarRegistros(raw) >= contarRegistros(atual)) localStorage.setItem(BACKUP_KEY, raw);
+            } catch (e) {}
+        }
+        function textoDiagnostico() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return '💾 Nenhum dado salvo neste aparelho';
+                const d = JSON.parse(raw);
+                return `💾 ${(d.agendamentos || []).length} agendamento(s) • ${(d.clientes || []).length} cliente(s) salvos neste aparelho`;
+            } catch (e) { return '💾 Erro ao ler os dados salvos: ' + e.message; }
+        }
+        function atualizarDiagnostico() {
+            const el = document.getElementById('diag');
+            if (el) el.textContent = textoDiagnostico();
+        }
+
+        function carregarDados() {
+            let raw = null;
+            try {
+                raw = localStorage.getItem(STORAGE_KEY);
                 if (!raw) return;
+                guardarBackup(raw);
                 const d = JSON.parse(raw);
                 agendamentos = d.agendamentos || [];
                 clientes = d.clientes || [];
@@ -654,7 +693,10 @@
                 if (Array.isArray(d.ordem)) {
                     ORDEM_SERVICOS = d.ordem.filter(k => CONFIG[k]);
                 }
-            } catch (e) { console.warn('Falha ao carregar', e); }
+            } catch (e) {
+                console.warn('Falha ao carregar', e);
+                if (raw) bloquearGravacao = true;
+            }
         }
 
         // ===== Datas (fuso local) =====
@@ -1255,7 +1297,14 @@
         });
 
         // ===== Init =====
+        // Mostra no rodapé qualquer erro que impeça a tela de montar (ajuda no suporte)
+        window.addEventListener('error', ev => {
+            const el = document.getElementById('diag');
+            if (el) el.textContent += ' • Erro: ' + ev.message;
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
+            atualizarDiagnostico();
             carregarDados();
             document.getElementById('data').min = hojeISO();
             document.getElementById('dateSlots').value = hojeISO();
