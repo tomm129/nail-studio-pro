@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ff6b9d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Nail Studio Pro">
+    <link rel="manifest" href="manifest.json">
+    <title>Nail Studio Pro - Sistema Completo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b9d, #ffa726);
+            color: white;
+            padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="40" cy="80" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .header h1 { font-size: 28px; margin-bottom: 5px; position: relative; z-index: 1; }
+        .header p { opacity: 0.9; position: relative; z-index: 1; }
+
+        .gear-btn {
+            position: absolute;
+            top: calc(14px + env(safe-area-inset-top, 0px));
+            right: 14px;
+            z-index: 2;
+            background: rgba(255,255,255,0.22);
+            border: none;
+            color: white;
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        .gear-btn:hover { background: rgba(255,255,255,0.38); transform: rotate(45deg); }
+
+        .nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            overflow-x: auto;
+        }
+
+        .nav-btn {
+            flex: 1;
+            min-width: 72px;
+            padding: 12px 6px;
+            background: none;
+            border: none;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+        }
+        .nav-btn.active { background: white; color: #ff6b9d; font-weight: bold; }
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b9d, #ffa726);
+        }
+
+        .content {
+            padding: 20px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        select {
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 12px;
+            cursor: pointer;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff6b9d;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b9d, #ffa726);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+            margin-bottom: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4); }
+        .btn:active { transform: translateY(0); }
+
+        .appointment-card, .client-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #ff6b9d;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .appointment-card::before {
+            content: '💅';
+            position: absolute; top: 10px; right: 15px;
+            font-size: 24px; opacity: 0.3;
+        }
+        .client-card::before {
+            content: '👤';
+            position: absolute; top: 10px; right: 15px;
+            font-size: 24px; opacity: 0.3;
+        }
+        .appointment-card:hover, .client-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .appointment-card.past { opacity: 0.6; border-left-color: #bbb; }
+
+        .day-divider {
+            font-size: 13px; font-weight: bold; color: #764ba2;
+            margin: 18px 0 10px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .day-divider .holiday { color: #e91e63; }
+
+        .appointment-name, .client-name {
+            font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px;
+        }
+        .appointment-details, .client-details { color: #666; font-size: 14px; }
+
+        .service-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 11px; font-weight: bold;
+            display: inline-block;
+            margin-top: 8px; margin-right: 8px;
+        }
+        .price-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px; font-weight: bold;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .appointment-time {
+            background: linear-gradient(135deg, #ff6b9d, #ffa726);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px; font-weight: bold;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .delete-btn {
+            background: #dc3545; color: white; border: none;
+            padding: 5px 10px; border-radius: 12px;
+            cursor: pointer; font-size: 12px; float: right;
+            transition: all 0.3s ease;
+        }
+        .delete-btn:hover { background: #c82333; transform: scale(1.05); }
+
+        .whatsapp-btn {
+            display: inline-block;
+            background: #25d366; color: white; border: none;
+            padding: 6px 14px; border-radius: 15px;
+            cursor: pointer; font-size: 12px; font-weight: bold;
+            margin-top: 10px; text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .whatsapp-btn:hover { background: #1ebe5d; transform: scale(1.05); }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state i { font-size: 48px; margin-bottom: 20px; display: block; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .stats { display: flex; gap: 15px; margin-bottom: 20px; }
+        .stat-card {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; padding: 15px; border-radius: 15px; text-align: center;
+        }
+        .stat-number { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 12px; opacity: 0.9; }
+
+        /* Aviso de data comemorativa */
+        .holiday-hint {
+            background: linear-gradient(135deg, #fff0f5, #ffe0ec);
+            border: 1px dashed #ff6b9d;
+            color: #c2185b;
+            padding: 10px 14px;
+            border-radius: 15px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: none;
+        }
+        .holiday-hint.show { display: block; }
+
+        /* Grade de horários */
+        .schedule-grid { overflow-x: auto; margin-bottom: 20px; }
+        .grid-container {
+            min-width: 620px; background: white;
+            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .grid-header {
+            display: grid; grid-template-columns: 80px repeat(7, 1fr);
+            background: linear-gradient(135deg, #ff6b9d, #ffa726); color: white;
+        }
+        .grid-header div { padding: 10px 5px; text-align: center; font-size: 12px; font-weight: bold; }
+        .grid-header .hol { display: block; font-size: 14px; }
+        .grid-row {
+            display: grid; grid-template-columns: 80px repeat(7, 1fr);
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .grid-row:hover { background: #f8f9fa; }
+        .time-slot {
+            padding: 8px 5px; text-align: center; font-size: 11px; font-weight: bold;
+            background: #f8f9fa; border-right: 1px solid #e9ecef;
+        }
+        .day-slot {
+            padding: 5px; text-align: center; font-size: 10px;
+            border-right: 1px solid #f0f0f0; cursor: pointer; transition: all 0.3s ease;
+            min-height: 40px; display: flex; align-items: center; justify-content: center;
+        }
+        .day-slot:hover { background: #e3f2fd; }
+        .day-slot.occupied { background: #ffcdd2; color: #d32f2f; font-weight: bold; }
+        .day-slot.available { background: #c8e6c9; color: #388e3c; }
+        .day-slot.pastslot { background: #eeeeee; color: #aaa; cursor: not-allowed; }
+        .day-slot.holidaycol { box-shadow: inset 0 0 0 2px rgba(233,30,99,0.25); }
+
+        /* Horários disponíveis */
+        .available-slots {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px; margin-bottom: 20px;
+        }
+        .slot-card {
+            background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+            border: 2px solid #4caf50; border-radius: 15px;
+            padding: 15px 10px; text-align: center; cursor: pointer; transition: all 0.3s ease;
+        }
+        .slot-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3); }
+        .slot-card.occupied {
+            background: linear-gradient(135deg, #ffcdd2, #ef9a9a);
+            border-color: #f44336; cursor: not-allowed;
+        }
+        .slot-card.pastslot { background: #eeeeee; border-color: #bbb; cursor: not-allowed; }
+        .slot-card.pastslot .slot-time, .slot-card.pastslot .slot-status { color: #999; }
+        .slot-time { font-weight: bold; color: #2e7d32; margin-bottom: 5px; }
+        .slot-card.occupied .slot-time { color: #c62828; }
+        .slot-status { font-size: 12px; color: #388e3c; }
+        .slot-card.occupied .slot-status { color: #d32f2f; }
+
+        .date-picker { background: #f8f9fa; border-radius: 15px; padding: 15px; margin-bottom: 20px; text-align: center; }
+
+        .week-navigation, .month-navigation {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        }
+        .week-nav-btn {
+            background: #ff6b9d; color: white; border: none; border-radius: 50%;
+            width: 40px; height: 40px; cursor: pointer; font-size: 18px; transition: all 0.3s ease;
+        }
+        .week-nav-btn:hover { transform: scale(1.1); background: #e91e63; }
+        .current-week { font-weight: bold; color: #333; text-align: center; }
+        .current-week small { display: block; font-weight: normal; color: #999; font-size: 11px; }
+
+        /* Financeiro */
+        .fin-cards { display: flex; gap: 12px; margin-bottom: 18px; }
+        .fin-card {
+            flex: 1; border-radius: 15px; padding: 16px 10px; text-align: center; color: white;
+        }
+        .fin-card.rev { background: linear-gradient(135deg, #ff6b9d, #ffa726); }
+        .fin-card.cost { background: linear-gradient(135deg, #90a4ae, #607d8b); }
+        .fin-card.profit { background: linear-gradient(135deg, #43a047, #2e7d32); }
+        .fin-value { font-size: 19px; font-weight: bold; margin-bottom: 4px; }
+        .fin-label { font-size: 11px; opacity: 0.95; }
+
+        .fin-forecast {
+            background: #f3e5f5; color: #6a1b9a;
+            border-radius: 15px; padding: 12px 15px; font-size: 13px;
+            margin-bottom: 18px; text-align: center; font-weight: bold;
+        }
+        .fin-section-title { font-weight: bold; color: #555; margin: 6px 0 12px; }
+
+        .fin-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; border-radius: 12px; padding: 12px 15px;
+            margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .fin-row .svc { font-size: 14px; }
+        .fin-row .qty { color: #999; font-size: 12px; }
+        .fin-row .amount { font-weight: bold; color: #2e7d32; }
+
+        /* Modal de configuração */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: flex-end; justify-content: center; z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white; width: 100%; max-width: 420px;
+            border-radius: 20px 20px 0 0;
+            max-height: 88vh; overflow-y: auto;
+            padding: 22px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+            animation: slideUp 0.28s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+        }
+        .modal-header h2 { font-size: 20px; color: #333; }
+        .modal-close {
+            background: #f0f0f0; border: none; width: 34px; height: 34px;
+            border-radius: 50%; font-size: 18px; cursor: pointer; color: #666;
+        }
+        .modal-sub { color: #999; font-size: 13px; margin-bottom: 18px; }
+
+        .cfg-service {
+            background: #f8f9fa; border-radius: 15px; padding: 14px; margin-bottom: 14px;
+        }
+        .cfg-service h3 { font-size: 15px; margin-bottom: 10px; color: #444; }
+        .cfg-fields { display: flex; gap: 8px; }
+        .cfg-field { flex: 1; }
+        .cfg-field label { font-size: 11px; margin-bottom: 4px; color: #888; }
+        .cfg-field input {
+            padding: 9px 10px; font-size: 15px; border-radius: 12px; text-align: center;
+        }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333; color: white; padding: 12px 24px;
+            border-radius: 25px; font-size: 14px; opacity: 0;
+            transition: all 0.35s ease; z-index: 1100; max-width: 90%; text-align: center;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="gear-btn" onclick="abrirConfig()" title="Configurar serviços e valores">⚙️</button>
+            <h1>💅 Nail Studio Pro</h1>
+            <p>Sistema Completo de Agendamentos</p>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" onclick="switchTab('agendar')">Agendar</button>
+            <button class="nav-btn" onclick="switchTab('agendamentos')">Lista</button>
+            <button class="nav-btn" onclick="switchTab('grade')">Grade</button>
+            <button class="nav-btn" onclick="switchTab('horarios')">Horários</button>
+            <button class="nav-btn" onclick="switchTab('clientes')">Clientes</button>
+            <button class="nav-btn" onclick="switchTab('financeiro')">💰 Caixa</button>
+        </div>
+
+        <div class="content">
+            <!-- Tab Agendar -->
+            <div id="agendar" class="tab-content active">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalAgendamentos">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="agendamentosHoje">0</div>
+                        <div class="stat-label">Hoje</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalClientes">0</div>
+                        <div class="stat-label">Clientes</div>
+                    </div>
+                </div>
+
+                <form id="agendamentoForm">
+                    <div class="form-group">
+                        <label for="clienteSelect">👤 Cliente</label>
+                        <select id="clienteSelect">
+                            <option value="">Selecione ou cadastre cliente</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="novoNome">✨ Ou digite novo nome</label>
+                        <input type="text" id="novoNome" placeholder="Nome completo do novo cliente">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data">📅 Data do Agendamento</label>
+                        <input type="date" id="data" required>
+                    </div>
+
+                    <div class="holiday-hint" id="holidayHint"></div>
+
+                    <div class="form-group">
+                        <label for="horario">🕐 Horário</label>
+                        <input type="time" id="horario" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servico">💅 Tipo de Serviço</label>
+                        <select id="servico" required>
+                            <option value="">Selecione o serviço</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn">✨ Agendar Serviço</button>
+                </form>
+            </div>
+
+            <!-- Tab Agendamentos -->
+            <div id="agendamentos" class="tab-content">
+                <div id="listaAgendamentos"></div>
+            </div>
+
+            <!-- Tab Grade -->
+            <div id="grade" class="tab-content">
+                <div class="week-navigation">
+                    <button class="week-nav-btn" onclick="changeWeek(-1)">‹</button>
+                    <div class="current-week" id="currentWeek"></div>
+                    <button class="week-nav-btn" onclick="changeWeek(1)">›</button>
+                </div>
+                <div class="schedule-grid">
+                    <div class="grid-container" id="scheduleGrid"></div>
+                </div>
+            </div>
+
+            <!-- Tab Horários -->
+            <div id="horarios" class="tab-content">
+                <div class="date-picker">
+                    <label for="dateSlots">📅 Selecione a data:</label>
+                    <input type="date" id="dateSlots">
+                </div>
+                <div id="availableSlots" class="available-slots"></div>
+            </div>
+
+            <!-- Tab Clientes -->
+            <div id="clientes" class="tab-content">
+                <form id="clienteForm">
+                    <div class="form-group">
+                        <label for="nomeCliente">👤 Nome Completo</label>
+                        <input type="text" id="nomeCliente" placeholder="Digite o nome completo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefoneCliente">📱 Telefone</label>
+                        <input type="tel" id="telefoneCliente" placeholder="(11) 99999-9999">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailCliente">✉️ Email</label>
+                        <input type="email" id="emailCliente" placeholder="cliente@email.com">
+                    </div>
+                    <button type="submit" class="btn">➕ Cadastrar Cliente</button>
+                </form>
+                <div id="listaClientes"></div>
+            </div>
+
+            <!-- Tab Financeiro -->
+            <div id="financeiro" class="tab-content">
+                <div class="month-navigation">
+                    <button class="week-nav-btn" onclick="changeFinMonth(-1)">‹</button>
+                    <div class="current-week" id="currentFinMonth"></div>
+                    <button class="week-nav-btn" onclick="changeFinMonth(1)">›</button>
+                </div>
+                <div id="finConteudo"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configuração -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>⚙️ Configurar Serviços</h2>
+                <button class="modal-close" onclick="fecharConfig()">✕</button>
+            </div>
+            <p class="modal-sub">Ajuste a duração, o valor e o custo de material de cada serviço. O lucro é calculado automaticamente.</p>
+            <div id="cfgLista"></div>
+            <button class="btn" onclick="salvarConfig()">💾 Salvar Configurações</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ===== Estado =====
+        let agendamentos = [];
+        let clientes = [];
+        let nextId = 1;
+        let nextClienteId = 1;
+        let currentWeekStart = new Date();
+        let currentFin = new Date();
+
+        const STORAGE_KEY = 'nailStudioPro.v2';
+        const ORDEM_SERVICOS = ['pé-simples','mão-simples','pé-mão-simples','manutencao','alongamento','completo'];
+
+        const CONFIG_DEFAULT = {
+            'pé-simples':     { nome: '👣 Pé Simples',         duracao: 45,  preco: 25,  custo: 0 },
+            'mão-simples':    { nome: '🤲 Mão Simples',        duracao: 30,  preco: 25,  custo: 0 },
+            'pé-mão-simples': { nome: '👣🤲 Pé e Mão Simples', duracao: 75,  preco: 45,  custo: 0 },
+            'manutencao':     { nome: '🔧 Manutenção',         duracao: 20,  preco: 35,  custo: 0 },
+            'alongamento':    { nome: '💎 Alongamento',        duracao: 90,  preco: 120, custo: 15 },
+            'completo':       { nome: '✨ Completo',           duracao: 150, preco: 150, custo: 20 }
+        };
+        let CONFIG = JSON.parse(JSON.stringify(CONFIG_DEFAULT));
+
+        // ===== Persistência =====
+        function salvarDados() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    agendamentos, clientes, nextId, nextClienteId, config: CONFIG
+                }));
+            } catch (e) { console.warn('Falha ao salvar', e); }
+        }
+        function carregarDados() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const d = JSON.parse(raw);
+                agendamentos = d.agendamentos || [];
+                clientes = d.clientes || [];
+                nextId = d.nextId || 1;
+                nextClienteId = d.nextClienteId || 1;
+                if (d.config) {
+                    ORDEM_SERVICOS.forEach(k => {
+                        if (d.config[k]) CONFIG[k] = Object.assign({}, CONFIG_DEFAULT[k], d.config[k]);
+                    });
+                }
+            } catch (e) { console.warn('Falha ao carregar', e); }
+        }
+
+        // ===== Datas (fuso local) =====
+        function dataLocalISO(d) {
+            return d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+        }
+        function hojeISO() { return dataLocalISO(new Date()); }
+        function minutosDe(h) { const [a, b] = h.split(':').map(Number); return a * 60 + b; }
+        function ehHoje(data) { return data === hojeISO(); }
+
+        // ===== Datas comemorativas =====
+        function nthSunday(year, month, n) { // month 0-based
+            const d = new Date(year, month, 1);
+            let count = 0;
+            while (d.getMonth() === month) {
+                if (d.getDay() === 0) { count++; if (count === n) return d.getDate(); }
+                d.setDate(d.getDate() + 1);
+            }
+            return null;
+        }
+        const COMEMORATIVAS_FIXAS = {
+            '01-01': '🎉 Ano Novo',
+            '03-08': '💐 Dia da Mulher',
+            '05-01': '🌷 Dia do Trabalho',
+            '06-12': '💕 Dia dos Namorados',
+            '10-12': '🧸 Dia das Crianças',
+            '12-24': '🎄 Véspera de Natal',
+            '12-25': '🎄 Natal',
+            '12-31': '🎆 Réveillon'
+        };
+        function comemorativaDe(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const mmdd = dateStr.slice(5);
+            if (COMEMORATIVAS_FIXAS[mmdd]) return COMEMORATIVAS_FIXAS[mmdd];
+            if (m === 5 && d === nthSunday(y, 4, 2)) return '💐 Dia das Mães';
+            if (m === 8 && d === nthSunday(y, 7, 2)) return '👔 Dia dos Pais';
+            return null;
+        }
+
+        // ===== Serviços =====
+        function obterNomeServico(s) { return CONFIG[s] ? CONFIG[s].nome : s; }
+        function obterDuracaoMin(s) { return CONFIG[s] ? CONFIG[s].duracao : 60; }
+        function obterPreco(s) { return CONFIG[s] ? CONFIG[s].preco : 0; }
+        function obterCusto(s) { return CONFIG[s] ? CONFIG[s].custo : 0; }
+        function obterDuracaoTexto(s) {
+            const min = obterDuracaoMin(s), h = Math.floor(min / 60), m = min % 60;
+            if (h && m) return h + 'h' + String(m).padStart(2, '0');
+            if (h) return h + 'h';
+            return m + 'min';
+        }
+
+        function ocupaSlot(ag, data, minutoSlot) {
+            if (ag.data !== data) return false;
+            const inicio = minutosDe(ag.horario);
+            const fim = inicio + obterDuracaoMin(ag.servico);
+            return minutoSlot >= inicio && minutoSlot < fim;
+        }
+        function encontrarConflito(data, horario, servico, ignorarId) {
+            const inicio = minutosDe(horario), fim = inicio + obterDuracaoMin(servico);
+            return agendamentos.find(ag => {
+                if (ag.data !== data) return false;
+                if (ignorarId && ag.id === ignorarId) return false;
+                const i2 = minutosDe(ag.horario), f2 = i2 + obterDuracaoMin(ag.servico);
+                return inicio < f2 && i2 < fim;
+            });
+        }
+
+        // ===== Formatação =====
+        function formatarData(data) { const [a, m, d] = data.split('-'); return `${d}/${m}/${a}`; }
+        function formatarHorario(h) { const [a, b] = h.split(':'); return `${a}:${b}`; }
+        function fmtBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        }
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg; el.classList.add('show');
+            clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 2600);
+        }
+
+        // ===== Abas =====
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            const buttons = document.querySelectorAll('.nav-btn');
+            const tabMap = { 'agendar':0, 'agendamentos':1, 'grade':2, 'horarios':3, 'clientes':4, 'financeiro':5 };
+            buttons[tabMap[tabName]].classList.add('active');
+
+            if (tabName === 'agendamentos') renderizarAgendamentos();
+            else if (tabName === 'grade') renderizarGrade();
+            else if (tabName === 'horarios') renderizarHorariosDisponiveis();
+            else if (tabName === 'clientes') renderizarClientes();
+            else if (tabName === 'financeiro') renderizarFinanceiro();
+        }
+
+        // ===== Estatísticas =====
+        function atualizarEstatisticas() {
+            document.getElementById('totalAgendamentos').textContent = agendamentos.length;
+            document.getElementById('agendamentosHoje').textContent = agendamentos.filter(a => ehHoje(a.data)).length;
+            document.getElementById('totalClientes').textContent = clientes.length;
+        }
+
+        // ===== Select de serviços =====
+        function montarSelectServicos() {
+            const sel = document.getElementById('servico');
+            const atual = sel.value;
+            sel.innerHTML = '<option value="">Selecione o serviço</option>';
+            ORDEM_SERVICOS.forEach(k => {
+                const o = document.createElement('option');
+                o.value = k;
+                o.textContent = `${CONFIG[k].nome} — ${fmtBRL(CONFIG[k].preco)} (${obterDuracaoTexto(k)})`;
+                sel.appendChild(o);
+            });
+            sel.value = atual;
+        }
+
+        // ===== Clientes =====
+        function adicionarCliente(nome, telefone, email) {
+            const c = { id: nextClienteId++, nome, telefone: telefone || '', email: email || '' };
+            clientes.push(c);
+            clientes.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+            atualizarSelectClientes(); atualizarEstatisticas(); salvarDados();
+            return c;
+        }
+        function atualizarSelectClientes() {
+            const select = document.getElementById('clienteSelect');
+            const atual = select.value;
+            select.innerHTML = '<option value="">Selecione ou cadastre cliente</option>';
+            clientes.forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.id; o.textContent = c.nome; select.appendChild(o);
+            });
+            select.value = atual;
+        }
+        function contarAgendamentosDoCliente(c) { return agendamentos.filter(a => a.nome === c.nome).length; }
+        function linkWhatsApp(tel) {
+            let dig = tel.replace(/\D/g, '');
+            if (dig.length <= 11 && !dig.startsWith('55')) dig = '55' + dig;
+            return 'https://wa.me/' + dig;
+        }
+        function renderizarClientes() {
+            const lista = document.getElementById('listaClientes');
+            if (clientes.length === 0) {
+                lista.innerHTML = `<div class="empty-state"><i>👥</i><h3>Nenhum cliente cadastrado</h3><p>Cadastre clientes para facilitar os agendamentos.</p></div>`;
+                return;
+            }
+            lista.innerHTML = clientes.map(c => `
+                <div class="client-card">
+                    <button class="delete-btn" onclick="removerCliente(${c.id})" title="Remover cliente">✕</button>
+                    <div class="client-name">${escapeHtml(c.nome)}</div>
+                    <div class="client-details">
+                        ${c.telefone ? `📱 ${escapeHtml(c.telefone)}` : ''}
+                        ${c.email ? `<br>✉️ ${escapeHtml(c.email)}` : ''}
+                        <br>📊 ${contarAgendamentosDoCliente(c)} agendamento(s)
+                    </div>
+                    ${c.telefone ? `<a class="whatsapp-btn" href="${linkWhatsApp(c.telefone)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+                </div>`).join('');
+        }
+        function removerCliente(id) {
+            if (confirm('Tem certeza que deseja remover este cliente?')) {
+                clientes = clientes.filter(c => c.id !== id);
+                atualizarSelectClientes(); atualizarEstatisticas(); renderizarClientes(); salvarDados();
+            }
+        }
+
+        // ===== Agendamentos =====
+        function adicionarAgendamento(nome, data, horario, servico) {
+            const ag = {
+                id: nextId++, nome, data, horario, servico,
+                preco: obterPreco(servico), custo: obterCusto(servico),
+                timestamp: Date.now()
+            };
+            agendamentos.push(ag);
+            agendamentos.sort((a, b) => (a.data + 'T' + a.horario).localeCompare(b.data + 'T' + b.horario));
+            atualizarEstatisticas(); salvarDados();
+            return ag;
+        }
+        function removerAgendamento(id) {
+            const ag = agendamentos.find(a => a.id === id);
+            if (!ag) return;
+            if (!confirm(`Remover o agendamento de ${ag.nome} em ${formatarData(ag.data)} às ${ag.horario}?`)) return;
+            agendamentos = agendamentos.filter(a => a.id !== id);
+            atualizarEstatisticas(); renderizarAgendamentos(); salvarDados();
+        }
+        function precoDoAg(ag) { return ag.preco != null ? ag.preco : obterPreco(ag.servico); }
+        function custoDoAg(ag) { return ag.custo != null ? ag.custo : obterCusto(ag.servico); }
+
+        function renderizarAgendamentos() {
+            const lista = document.getElementById('listaAgendamentos');
+            if (agendamentos.length === 0) {
+                lista.innerHTML = `<div class="empty-state"><i>📅</i><h3>Nenhum agendamento</h3><p>Quando você criar agendamentos, eles aparecerão aqui.</p></div>`;
+                return;
+            }
+            const hoje = hojeISO();
+            let html = '', dataAtual = null;
+            agendamentos.forEach(ag => {
+                if (ag.data !== dataAtual) {
+                    dataAtual = ag.data;
+                    const com = comemorativaDe(ag.data);
+                    let rot = ag.data === hoje ? '📌 Hoje — ' + formatarData(ag.data) : '📅 ' + formatarData(ag.data);
+                    if (com) rot += ` <span class="holiday">• ${com}</span>`;
+                    html += `<div class="day-divider">${rot}</div>`;
+                }
+                const passado = ag.data < hoje;
+                html += `
+                    <div class="appointment-card${passado ? ' past' : ''}">
+                        <button class="delete-btn" onclick="removerAgendamento(${ag.id})" title="Remover agendamento">✕</button>
+                        <div class="appointment-name">${escapeHtml(ag.nome)}</div>
+                        <div class="appointment-details">📅 ${formatarData(ag.data)}</div>
+                        <div class="service-badge">${obterNomeServico(ag.servico)}</div>
+                        <span class="price-badge">${fmtBRL(precoDoAg(ag))}</span>
+                        <div class="appointment-time">🕐 ${formatarHorario(ag.horario)} • ${obterDuracaoTexto(ag.servico)}</div>
+                    </div>`;
+            });
+            lista.innerHTML = html;
+        }
+
+        // ===== Grade =====
+        function renderizarGrade() {
+            const grid = document.getElementById('scheduleGrid');
+            const weekStart = new Date(currentWeekStart);
+            const weekDays = [];
+            for (let i = 0; i < 7; i++) { const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); weekDays.push(d); }
+
+            document.getElementById('currentWeek').textContent =
+                `${weekDays[0].getDate()}/${weekDays[0].getMonth() + 1} - ${weekDays[6].getDate()}/${weekDays[6].getMonth() + 1}`;
+
+            let html = `<div class="grid-header"><div>Horário</div>${weekDays.map(day => {
+                const com = comemorativaDe(dataLocalISO(day));
+                const emoji = com ? com.split(' ')[0] : '';
+                return `<div title="${com ? escapeHtml(com) : ''}">
+                    ${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][day.getDay()]}<br>${day.getDate()}/${day.getMonth() + 1}
+                    ${emoji ? `<span class="hol">${emoji}</span>` : ''}
+                </div>`;
+            }).join('')}</div>`;
+
+            const hoje = hojeISO();
+            const agora = new Date();
+            const minAgora = agora.getHours() * 60 + agora.getMinutes();
+
+            for (let hora = 7; hora <= 20; hora++) {
+                for (let minuto of ['00', '30']) {
+                    const timeSlot = `${String(hora).padStart(2, '0')}:${minuto}`;
+                    const minSlot = hora * 60 + Number(minuto);
+                    html += `<div class="grid-row"><div class="time-slot">${timeSlot}</div>${weekDays.map(day => {
+                        const dateStr = dataLocalISO(day);
+                        const holCls = comemorativaDe(dateStr) ? ' holidaycol' : '';
+                        const ag = agendamentos.find(a => ocupaSlot(a, dateStr, minSlot));
+                        if (ag) {
+                            const inicio = ag.horario === timeSlot;
+                            return `<div class="day-slot occupied${holCls}" title="${escapeHtml(ag.nome)} - ${obterNomeServico(ag.servico)} (${ag.horario}, ${obterDuracaoTexto(ag.servico)})">${inicio ? escapeHtml(ag.nome.split(' ')[0]) : '•'}</div>`;
+                        }
+                        const passado = dateStr < hoje || (dateStr === hoje && minSlot < minAgora);
+                        if (passado) return `<div class="day-slot pastslot${holCls}" title="Horário já passou">—</div>`;
+                        return `<div class="day-slot available${holCls}" onclick="agendarRapido('${dateStr}', '${timeSlot}')" title="Disponível - Clique para agendar">Livre</div>`;
+                    }).join('')}</div>`;
+                }
+            }
+            grid.innerHTML = html;
+        }
+        function changeWeek(dir) { currentWeekStart.setDate(currentWeekStart.getDate() + dir * 7); renderizarGrade(); }
+        function agendarRapido(data, horario) {
+            switchTab('agendar');
+            document.getElementById('data').value = data;
+            document.getElementById('horario').value = horario;
+            atualizarHolidayHint();
+            toast(`📅 ${formatarData(data)} às ${horario} — escolha o cliente e o serviço`);
+        }
+
+        // ===== Horários disponíveis =====
+        function renderizarHorariosDisponiveis() {
+            const dateInput = document.getElementById('dateSlots');
+            if (!dateInput.value) dateInput.value = hojeISO();
+            const selectedDate = dateInput.value;
+            const cont = document.getElementById('availableSlots');
+            const hoje = hojeISO();
+            const agora = new Date();
+            const minAgora = agora.getHours() * 60 + agora.getMinutes();
+            let html = '';
+            for (let hora = 7; hora <= 20; hora++) {
+                for (let minuto of ['00', '30']) {
+                    const timeSlot = `${String(hora).padStart(2, '0')}:${minuto}`;
+                    const minSlot = hora * 60 + Number(minuto);
+                    const ag = agendamentos.find(a => ocupaSlot(a, selectedDate, minSlot));
+                    if (ag) {
+                        html += `<div class="slot-card occupied"><div class="slot-time">${timeSlot}</div><div class="slot-status">Ocupado<br>${escapeHtml(ag.nome.split(' ')[0])}</div></div>`;
+                    } else if (selectedDate < hoje || (selectedDate === hoje && minSlot < minAgora)) {
+                        html += `<div class="slot-card pastslot"><div class="slot-time">${timeSlot}</div><div class="slot-status">Já passou</div></div>`;
+                    } else {
+                        html += `<div class="slot-card" onclick="agendarRapido('${selectedDate}', '${timeSlot}')"><div class="slot-time">${timeSlot}</div><div class="slot-status">Disponível</div></div>`;
+                    }
+                }
+            }
+            cont.innerHTML = html;
+        }
+
+        // ===== Financeiro =====
+        function changeFinMonth(dir) { currentFin.setMonth(currentFin.getMonth() + dir); renderizarFinanceiro(); }
+        function renderizarFinanceiro() {
+            const ano = currentFin.getFullYear();
+            const mes = currentFin.getMonth(); // 0-based
+            const prefixo = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+            const nomeMes = currentFin.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            document.getElementById('currentFinMonth').innerHTML =
+                `${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}<small>Toque nas setas para trocar de mês</small>`;
+
+            const hoje = hojeISO();
+            const doMes = agendamentos.filter(a => a.data.startsWith(prefixo));
+            const realizados = doMes.filter(a => a.data <= hoje);
+            const futuros = doMes.filter(a => a.data > hoje);
+
+            const fatReal = realizados.reduce((s, a) => s + precoDoAg(a), 0);
+            const custoReal = realizados.reduce((s, a) => s + custoDoAg(a), 0);
+            const lucroReal = fatReal - custoReal;
+            const fatFuturo = futuros.reduce((s, a) => s + precoDoAg(a), 0);
+
+            const cont = document.getElementById('finConteudo');
+
+            if (doMes.length === 0) {
+                cont.innerHTML = `<div class="empty-state"><i>💰</i><h3>Sem movimento neste mês</h3><p>Os atendimentos deste mês aparecerão aqui com faturamento e lucro.</p></div>`;
+                return;
+            }
+
+            // Detalhamento por serviço (realizados)
+            const porServico = {};
+            realizados.forEach(a => {
+                if (!porServico[a.servico]) porServico[a.servico] = { qtd: 0, total: 0 };
+                porServico[a.servico].qtd++;
+                porServico[a.servico].total += precoDoAg(a);
+            });
+            let detalhe = ORDEM_SERVICOS.filter(k => porServico[k]).map(k => `
+                <div class="fin-row">
+                    <div>
+                        <div class="svc">${obterNomeServico(k)}</div>
+                        <div class="qty">${porServico[k].qtd}× • ${fmtBRL(CONFIG[k].preco)} cada</div>
+                    </div>
+                    <div class="amount">${fmtBRL(porServico[k].total)}</div>
+                </div>`).join('');
+            if (!detalhe) detalhe = `<p class="qty" style="text-align:center;color:#999">Nenhum atendimento realizado ainda neste mês.</p>`;
+
+            cont.innerHTML = `
+                <div class="fin-cards">
+                    <div class="fin-card rev"><div class="fin-value">${fmtBRL(fatReal)}</div><div class="fin-label">Faturamento</div></div>
+                    <div class="fin-card cost"><div class="fin-value">${fmtBRL(custoReal)}</div><div class="fin-label">Custo</div></div>
+                    <div class="fin-card profit"><div class="fin-value">${fmtBRL(lucroReal)}</div><div class="fin-label">Lucro</div></div>
+                </div>
+                ${futuros.length ? `<div class="fin-forecast">📈 Previsto: ${fmtBRL(fatFuturo)} em ${futuros.length} agendamento(s) futuro(s) neste mês</div>` : ''}
+                <div class="fin-section-title">💅 ${realizados.length} atendimento(s) realizado(s)</div>
+                ${detalhe}`;
+        }
+
+        // ===== Configuração (modal) =====
+        function abrirConfig() {
+            const lista = document.getElementById('cfgLista');
+            lista.innerHTML = ORDEM_SERVICOS.map(k => `
+                <div class="cfg-service">
+                    <h3>${CONFIG[k].nome}</h3>
+                    <div class="cfg-fields">
+                        <div class="cfg-field">
+                            <label>Duração (min)</label>
+                            <input type="number" min="5" step="5" id="cfg-dur-${k}" value="${CONFIG[k].duracao}">
+                        </div>
+                        <div class="cfg-field">
+                            <label>Valor (R$)</label>
+                            <input type="number" min="0" step="1" id="cfg-preco-${k}" value="${CONFIG[k].preco}">
+                        </div>
+                        <div class="cfg-field">
+                            <label>Custo (R$)</label>
+                            <input type="number" min="0" step="1" id="cfg-custo-${k}" value="${CONFIG[k].custo}">
+                        </div>
+                    </div>
+                </div>`).join('');
+            document.getElementById('configModal').classList.add('show');
+        }
+        function fecharConfig() { document.getElementById('configModal').classList.remove('show'); }
+        function salvarConfig() {
+            ORDEM_SERVICOS.forEach(k => {
+                const dur = parseInt(document.getElementById('cfg-dur-' + k).value, 10);
+                const preco = parseFloat(document.getElementById('cfg-preco-' + k).value);
+                const custo = parseFloat(document.getElementById('cfg-custo-' + k).value);
+                if (!isNaN(dur) && dur > 0) CONFIG[k].duracao = dur;
+                if (!isNaN(preco) && preco >= 0) CONFIG[k].preco = preco;
+                if (!isNaN(custo) && custo >= 0) CONFIG[k].custo = custo;
+            });
+            salvarDados();
+            montarSelectServicos();
+            fecharConfig();
+            toast('✅ Configurações salvas!');
+        }
+
+        // ===== Aviso de comemorativa no agendar =====
+        function atualizarHolidayHint() {
+            const data = document.getElementById('data').value;
+            const hint = document.getElementById('holidayHint');
+            const com = data ? comemorativaDe(data) : null;
+            if (com) {
+                hint.textContent = `${com} — ótima data para uma promoção especial! 🎉`;
+                hint.classList.add('show');
+            } else {
+                hint.classList.remove('show');
+            }
+        }
+
+        // ===== Event Listeners =====
+        document.getElementById('agendamentoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const clienteId = document.getElementById('clienteSelect').value;
+            const novoNome = document.getElementById('novoNome').value.trim();
+            const data = document.getElementById('data').value;
+            const horario = document.getElementById('horario').value;
+            const servico = document.getElementById('servico').value;
+
+            let nomeCliente = '';
+            if (clienteId) {
+                nomeCliente = clientes.find(c => c.id == clienteId).nome;
+            } else if (novoNome) {
+                nomeCliente = novoNome;
+                if (!clientes.find(c => c.nome.toLowerCase() === novoNome.toLowerCase())) adicionarCliente(novoNome, '', '');
+            } else {
+                alert('Por favor, selecione um cliente ou digite o nome de um novo cliente!'); return;
+            }
+            if (!data || !horario || !servico) { alert('Por favor, preencha todos os campos obrigatórios!'); return; }
+
+            const hoje = hojeISO();
+            if (data < hoje) { alert('Não é possível agendar para uma data no passado!'); return; }
+            if (data === hoje) {
+                const agora = new Date();
+                if (minutosDe(horario) < agora.getHours() * 60 + agora.getMinutes()) { alert('Esse horário de hoje já passou!'); return; }
+            }
+            const conflito = encontrarConflito(data, horario, servico);
+            if (conflito) {
+                alert(`Conflito de horário!\n${conflito.nome} já tem ${obterNomeServico(conflito.servico)} às ${formatarHorario(conflito.horario)} (${obterDuracaoTexto(conflito.servico)}) nesse dia.`);
+                return;
+            }
+
+            adicionarAgendamento(nomeCliente, data, horario, servico);
+            this.reset();
+            document.getElementById('holidayHint').classList.remove('show');
+            const btn = document.querySelector('#agendamentoForm .btn');
+            const txt = btn.textContent;
+            btn.textContent = '✅ Serviço Agendado!'; btn.style.background = '#28a745';
+            setTimeout(() => { btn.textContent = txt; btn.style.background = ''; switchTab('agendamentos'); }, 1200);
+        });
+
+        document.getElementById('clienteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('nomeCliente').value.trim();
+            const telefone = document.getElementById('telefoneCliente').value.trim();
+            const email = document.getElementById('emailCliente').value.trim();
+            if (!nome) { alert('Por favor, digite o nome do cliente!'); return; }
+            if (clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase())) { alert('Já existe um cliente com este nome!'); return; }
+            adicionarCliente(nome, telefone, email);
+            this.reset(); renderizarClientes();
+            const btn = this.querySelector('.btn');
+            const txt = btn.textContent;
+            btn.textContent = '✅ Cliente Cadastrado!'; btn.style.background = '#28a745';
+            setTimeout(() => { btn.textContent = txt; btn.style.background = ''; }, 1200);
+        });
+
+        document.getElementById('dateSlots').addEventListener('change', renderizarHorariosDisponiveis);
+        document.getElementById('data').addEventListener('change', atualizarHolidayHint);
+        document.getElementById('clienteSelect').addEventListener('change', function() {
+            if (this.value) document.getElementById('novoNome').value = '';
+        });
+        document.getElementById('novoNome').addEventListener('input', function() {
+            if (this.value) document.getElementById('clienteSelect').value = '';
+        });
+        document.getElementById('configModal').addEventListener('click', function(e) {
+            if (e.target === this) fecharConfig();
+        });
+
+        // ===== Init =====
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarDados();
+            document.getElementById('data').min = hojeISO();
+            document.getElementById('dateSlots').value = hojeISO();
+            const today = new Date();
+            const dow = today.getDay();
+            const dToMon = dow === 0 ? -6 : 1 - dow;
+            currentWeekStart = new Date(today);
+            currentWeekStart.setDate(today.getDate() + dToMon);
+            currentFin = new Date();
+
+            montarSelectServicos();
+            atualizarEstatisticas();
+            renderizarAgendamentos();
+            atualizarSelectClientes();
+
+            if ('serviceWorker' in navigator && location.protocol === 'https:') {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
+        });
+    </script>
+</body>
+</html>
