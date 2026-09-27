@@ -393,6 +393,26 @@
             padding: 9px 10px; font-size: 15px; border-radius: 12px; text-align: center;
         }
 
+        .cfg-top { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+        .cfg-top input {
+            flex: 1; padding: 9px 12px; font-size: 15px; font-weight: bold; border-radius: 12px;
+        }
+        .cfg-remove {
+            background: #fdecea; color: #c62828; border: none;
+            width: 38px; height: 38px; border-radius: 12px; font-size: 16px; cursor: pointer; flex-shrink: 0;
+        }
+        .cfg-add {
+            border: 2px dashed #ff6b9d; background: #fff7fa;
+            border-radius: 15px; padding: 14px; margin-bottom: 18px;
+        }
+        .cfg-add h3 { font-size: 15px; margin-bottom: 10px; color: #c2185b; }
+        .cfg-add .cfg-top input { font-weight: normal; }
+        .btn-small {
+            width: 100%; margin-top: 10px; padding: 11px;
+            background: #ff6b9d; color: white; border: none; border-radius: 20px;
+            font-size: 15px; font-weight: bold; cursor: pointer;
+        }
+
         .toast {
             position: fixed; bottom: 30px; left: 50%;
             transform: translateX(-50%) translateY(100px);
@@ -539,7 +559,7 @@
                 <h2>⚙️ Configurar Serviços</h2>
                 <button class="modal-close" onclick="fecharConfig()">✕</button>
             </div>
-            <p class="modal-sub">Ajuste a duração, o valor e o custo de material de cada serviço. O lucro é calculado automaticamente.</p>
+            <p class="modal-sub">Edite, adicione ou remova serviços. O lucro é calculado automaticamente (valor − custo). Mudanças valem para os próximos agendamentos; os já marcados não são alterados.</p>
             <div id="cfgLista"></div>
             <button class="btn" onclick="salvarConfig()">💾 Salvar Configurações</button>
         </div>
@@ -557,7 +577,8 @@
         let currentFin = new Date();
 
         const STORAGE_KEY = 'nailStudioPro.v2';
-        const ORDEM_SERVICOS = ['pé-simples','mão-simples','pé-mão-simples','manutencao','alongamento','completo'];
+        const ORDEM_PADRAO = ['pé-simples','mão-simples','pé-mão-simples','manutencao','alongamento','completo'];
+        let ORDEM_SERVICOS = ORDEM_PADRAO.slice();
 
         const CONFIG_DEFAULT = {
             'pé-simples':     { nome: '👣 Pé Simples',         duracao: 45,  preco: 25,  custo: 0 },
@@ -573,7 +594,7 @@
         function salvarDados() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                    agendamentos, clientes, nextId, nextClienteId, config: CONFIG
+                    agendamentos, clientes, nextId, nextClienteId, config: CONFIG, ordem: ORDEM_SERVICOS
                 }));
             } catch (e) { console.warn('Falha ao salvar', e); }
         }
@@ -587,9 +608,12 @@
                 nextId = d.nextId || 1;
                 nextClienteId = d.nextClienteId || 1;
                 if (d.config) {
-                    ORDEM_SERVICOS.forEach(k => {
-                        if (d.config[k]) CONFIG[k] = Object.assign({}, CONFIG_DEFAULT[k], d.config[k]);
+                    Object.keys(d.config).forEach(k => {
+                        CONFIG[k] = Object.assign({}, CONFIG_DEFAULT[k] || {}, d.config[k]);
                     });
+                }
+                if (Array.isArray(d.ordem)) {
+                    ORDEM_SERVICOS = d.ordem.filter(k => CONFIG[k]);
                 }
             } catch (e) { console.warn('Falha ao carregar', e); }
         }
@@ -638,17 +662,24 @@
         function obterDuracaoMin(s) { return CONFIG[s] ? CONFIG[s].duracao : 60; }
         function obterPreco(s) { return CONFIG[s] ? CONFIG[s].preco : 0; }
         function obterCusto(s) { return CONFIG[s] ? CONFIG[s].custo : 0; }
-        function obterDuracaoTexto(s) {
-            const min = obterDuracaoMin(s), h = Math.floor(min / 60), m = min % 60;
+        function fmtDuracao(min) {
+            const h = Math.floor(min / 60), m = min % 60;
             if (h && m) return h + 'h' + String(m).padStart(2, '0');
             if (h) return h + 'h';
             return m + 'min';
         }
+        function obterDuracaoTexto(s) { return fmtDuracao(obterDuracaoMin(s)); }
+        function servicosAtivos() { return ORDEM_SERVICOS.filter(k => CONFIG[k] && !CONFIG[k].removido); }
+
+        // Cada agendamento guarda nome/duração do serviço no momento da marcação;
+        // agendamentos antigos (sem esses campos) usam a configuração atual.
+        function nomeServicoDoAg(ag) { return ag.servicoNome || obterNomeServico(ag.servico); }
+        function duracaoDoAg(ag) { return ag.duracao || obterDuracaoMin(ag.servico); }
 
         function ocupaSlot(ag, data, minutoSlot) {
             if (ag.data !== data) return false;
             const inicio = minutosDe(ag.horario);
-            const fim = inicio + obterDuracaoMin(ag.servico);
+            const fim = inicio + duracaoDoAg(ag);
             return minutoSlot >= inicio && minutoSlot < fim;
         }
         function encontrarConflito(data, horario, servico, ignorarId) {
@@ -656,7 +687,7 @@
             return agendamentos.find(ag => {
                 if (ag.data !== data) return false;
                 if (ignorarId && ag.id === ignorarId) return false;
-                const i2 = minutosDe(ag.horario), f2 = i2 + obterDuracaoMin(ag.servico);
+                const i2 = minutosDe(ag.horario), f2 = i2 + duracaoDoAg(ag);
                 return inicio < f2 && i2 < fim;
             });
         }
@@ -702,7 +733,7 @@
             const sel = document.getElementById('servico');
             const atual = sel.value;
             sel.innerHTML = '<option value="">Selecione o serviço</option>';
-            ORDEM_SERVICOS.forEach(k => {
+            servicosAtivos().forEach(k => {
                 const o = document.createElement('option');
                 o.value = k;
                 o.textContent = `${CONFIG[k].nome} — ${fmtBRL(CONFIG[k].preco)} (${obterDuracaoTexto(k)})`;
@@ -764,6 +795,7 @@
         function adicionarAgendamento(nome, data, horario, servico) {
             const ag = {
                 id: nextId++, nome, data, horario, servico,
+                servicoNome: obterNomeServico(servico), duracao: obterDuracaoMin(servico),
                 preco: obterPreco(servico), custo: obterCusto(servico),
                 timestamp: Date.now()
             };
@@ -804,9 +836,9 @@
                         <button class="delete-btn" onclick="removerAgendamento(${ag.id})" title="Remover agendamento">✕</button>
                         <div class="appointment-name">${escapeHtml(ag.nome)}</div>
                         <div class="appointment-details">📅 ${formatarData(ag.data)}</div>
-                        <div class="service-badge">${obterNomeServico(ag.servico)}</div>
+                        <div class="service-badge">${escapeHtml(nomeServicoDoAg(ag))}</div>
                         <span class="price-badge">${fmtBRL(precoDoAg(ag))}</span>
-                        <div class="appointment-time">🕐 ${formatarHorario(ag.horario)} • ${obterDuracaoTexto(ag.servico)}</div>
+                        <div class="appointment-time">🕐 ${formatarHorario(ag.horario)} • ${fmtDuracao(duracaoDoAg(ag))}</div>
                     </div>`;
             });
             lista.innerHTML = html;
@@ -845,7 +877,7 @@
                         const ag = agendamentos.find(a => ocupaSlot(a, dateStr, minSlot));
                         if (ag) {
                             const inicio = ag.horario === timeSlot;
-                            return `<div class="day-slot occupied${holCls}" title="${escapeHtml(ag.nome)} - ${obterNomeServico(ag.servico)} (${ag.horario}, ${obterDuracaoTexto(ag.servico)})">${inicio ? escapeHtml(ag.nome.split(' ')[0]) : '•'}</div>`;
+                            return `<div class="day-slot occupied${holCls}" title="${escapeHtml(ag.nome)} - ${escapeHtml(nomeServicoDoAg(ag))} (${ag.horario}, ${fmtDuracao(duracaoDoAg(ag))})">${inicio ? escapeHtml(ag.nome.split(' ')[0]) : '•'}</div>`;
                         }
                         const passado = dateStr < hoje || (dateStr === hoje && minSlot < minAgora);
                         if (passado) return `<div class="day-slot pastslot${holCls}" title="Horário já passou">—</div>`;
@@ -921,15 +953,17 @@
             // Detalhamento por serviço (realizados)
             const porServico = {};
             realizados.forEach(a => {
-                if (!porServico[a.servico]) porServico[a.servico] = { qtd: 0, total: 0 };
+                if (!porServico[a.servico]) porServico[a.servico] = { qtd: 0, total: 0, nome: nomeServicoDoAg(a) };
                 porServico[a.servico].qtd++;
                 porServico[a.servico].total += precoDoAg(a);
             });
-            let detalhe = ORDEM_SERVICOS.filter(k => porServico[k]).map(k => `
+            const chaves = ORDEM_SERVICOS.filter(k => porServico[k])
+                .concat(Object.keys(porServico).filter(k => !ORDEM_SERVICOS.includes(k)));
+            let detalhe = chaves.map(k => `
                 <div class="fin-row">
                     <div>
-                        <div class="svc">${obterNomeServico(k)}</div>
-                        <div class="qty">${porServico[k].qtd}× • ${fmtBRL(CONFIG[k].preco)} cada</div>
+                        <div class="svc">${escapeHtml(porServico[k].nome)}</div>
+                        <div class="qty">${porServico[k].qtd} atendimento(s)</div>
                     </div>
                     <div class="amount">${fmtBRL(porServico[k].total)}</div>
                 </div>`).join('');
@@ -947,38 +981,103 @@
         }
 
         // ===== Configuração (modal) =====
-        function abrirConfig() {
-            const lista = document.getElementById('cfgLista');
-            lista.innerHTML = ORDEM_SERVICOS.map(k => `
-                <div class="cfg-service">
-                    <h3>${CONFIG[k].nome}</h3>
-                    <div class="cfg-fields">
-                        <div class="cfg-field">
-                            <label>Duração (min)</label>
-                            <input type="number" min="5" step="5" id="cfg-dur-${k}" value="${CONFIG[k].duracao}">
-                        </div>
-                        <div class="cfg-field">
-                            <label>Valor (R$)</label>
-                            <input type="number" min="0" step="1" id="cfg-preco-${k}" value="${CONFIG[k].preco}">
-                        </div>
-                        <div class="cfg-field">
-                            <label>Custo (R$)</label>
-                            <input type="number" min="0" step="1" id="cfg-custo-${k}" value="${CONFIG[k].custo}">
-                        </div>
+        function camposServico(s) {
+            return `
+                <div class="cfg-fields">
+                    <div class="cfg-field">
+                        <label>Duração (min)</label>
+                        <input type="number" min="5" step="5" inputmode="numeric" data-f="duracao" value="${s.duracao}">
                     </div>
-                </div>`).join('');
+                    <div class="cfg-field">
+                        <label>Valor (R$)</label>
+                        <input type="number" min="0" step="0.01" inputmode="decimal" data-f="preco" value="${s.preco}">
+                    </div>
+                    <div class="cfg-field">
+                        <label>Custo (R$)</label>
+                        <input type="number" min="0" step="0.01" inputmode="decimal" data-f="custo" value="${s.custo}">
+                    </div>
+                </div>`;
+        }
+        function renderizarConfig() {
+            const lista = document.getElementById('cfgLista');
+            lista.innerHTML = servicosAtivos().map(k => `
+                <div class="cfg-service" data-key="${k}">
+                    <div class="cfg-top">
+                        <input type="text" data-f="nome" value="${escapeHtml(CONFIG[k].nome)}" placeholder="Nome do serviço">
+                        <button class="cfg-remove" onclick="removerServico('${k}')" title="Remover serviço">🗑️</button>
+                    </div>
+                    ${camposServico(CONFIG[k])}
+                </div>`).join('') + `
+                <div class="cfg-add" id="cfgNovo">
+                    <h3>➕ Adicionar novo serviço</h3>
+                    <div class="cfg-top">
+                        <input type="text" data-f="nome" placeholder="Ex: 💅 Esmaltação em gel">
+                    </div>
+                    ${camposServico({ duracao: 60, preco: '', custo: 0 })}
+                    <button class="btn-small" onclick="adicionarServico()">Adicionar serviço</button>
+                </div>`;
+        }
+        function lerCampos(el) {
+            const v = f => el.querySelector(`[data-f="${f}"]`).value;
+            return {
+                nome: v('nome').trim(),
+                duracao: parseInt(v('duracao'), 10),
+                preco: parseFloat(v('preco')),
+                custo: parseFloat(v('custo'))
+            };
+        }
+        // Aplica o que foi digitado nos serviços existentes (ignora campos inválidos)
+        function aplicarEdicoes() {
+            document.querySelectorAll('#cfgLista .cfg-service[data-key]').forEach(el => {
+                const k = el.dataset.key, c = lerCampos(el);
+                if (c.nome) CONFIG[k].nome = c.nome;
+                if (!isNaN(c.duracao) && c.duracao > 0) CONFIG[k].duracao = c.duracao;
+                if (!isNaN(c.preco) && c.preco >= 0) CONFIG[k].preco = c.preco;
+                if (!isNaN(c.custo) && c.custo >= 0) CONFIG[k].custo = c.custo;
+            });
+        }
+        // Lê o formulário de novo serviço; retorna true se adicionou
+        function criarServicoDoFormulario() {
+            const c = lerCampos(document.getElementById('cfgNovo'));
+            if (!c.nome) { alert('Digite o nome do novo serviço!'); return false; }
+            if (isNaN(c.duracao) || c.duracao <= 0) { alert('Informe a duração em minutos (ex: 60).'); return false; }
+            if (isNaN(c.preco) || c.preco < 0) { alert('Informe o valor do serviço (ex: 50).'); return false; }
+            const id = 'svc-' + Date.now();
+            CONFIG[id] = {
+                nome: c.nome, duracao: c.duracao, preco: c.preco,
+                custo: (isNaN(c.custo) || c.custo < 0) ? 0 : c.custo
+            };
+            ORDEM_SERVICOS.push(id);
+            return true;
+        }
+        function adicionarServico() {
+            aplicarEdicoes();
+            if (!criarServicoDoFormulario()) return;
+            salvarDados();
+            montarSelectServicos();
+            renderizarConfig();
+            toast('✅ Serviço adicionado!');
+        }
+        function removerServico(k) {
+            if (servicosAtivos().length <= 1) { alert('É preciso ter pelo menos um serviço.'); return; }
+            if (!confirm(`Remover "${CONFIG[k].nome}"?\n\nOs agendamentos já feitos com esse serviço continuam normalmente.`)) return;
+            aplicarEdicoes();
+            CONFIG[k].removido = true;
+            salvarDados();
+            montarSelectServicos();
+            renderizarConfig();
+            toast('🗑️ Serviço removido');
+        }
+        function abrirConfig() {
+            renderizarConfig();
             document.getElementById('configModal').classList.add('show');
         }
         function fecharConfig() { document.getElementById('configModal').classList.remove('show'); }
         function salvarConfig() {
-            ORDEM_SERVICOS.forEach(k => {
-                const dur = parseInt(document.getElementById('cfg-dur-' + k).value, 10);
-                const preco = parseFloat(document.getElementById('cfg-preco-' + k).value);
-                const custo = parseFloat(document.getElementById('cfg-custo-' + k).value);
-                if (!isNaN(dur) && dur > 0) CONFIG[k].duracao = dur;
-                if (!isNaN(preco) && preco >= 0) CONFIG[k].preco = preco;
-                if (!isNaN(custo) && custo >= 0) CONFIG[k].custo = custo;
-            });
+            aplicarEdicoes();
+            // Se preencheu um novo serviço e esqueceu de tocar em "Adicionar", adiciona também
+            const nomeNovo = document.querySelector('#cfgNovo [data-f="nome"]').value.trim();
+            if (nomeNovo && !criarServicoDoFormulario()) return;
             salvarDados();
             montarSelectServicos();
             fecharConfig();
@@ -1026,7 +1125,7 @@
             }
             const conflito = encontrarConflito(data, horario, servico);
             if (conflito) {
-                alert(`Conflito de horário!\n${conflito.nome} já tem ${obterNomeServico(conflito.servico)} às ${formatarHorario(conflito.horario)} (${obterDuracaoTexto(conflito.servico)}) nesse dia.`);
+                alert(`Conflito de horário!\n${conflito.nome} já tem ${nomeServicoDoAg(conflito)} às ${formatarHorario(conflito.horario)} (${fmtDuracao(duracaoDoAg(conflito))}) nesse dia.`);
                 return;
             }
 
@@ -1083,8 +1182,15 @@
             renderizarAgendamentos();
             atualizarSelectClientes();
 
-            if ('serviceWorker' in navigator && location.protocol === 'https:') {
-                navigator.serviceWorker.register('sw.js').catch(() => {});
+            // No APK os arquivos já vêm dentro do app: service worker só na versão do link
+            const ehApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+            if ('serviceWorker' in navigator) {
+                if (ehApp) {
+                    navigator.serviceWorker.getRegistrations()
+                        .then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+                } else if (location.protocol === 'https:') {
+                    navigator.serviceWorker.register('sw.js').catch(() => {});
+                }
             }
         });
     </script>
