@@ -438,6 +438,12 @@
             font-size: 15px; font-weight: bold; cursor: pointer;
         }
 
+        .versao {
+            max-width: 420px; margin: 0 auto; text-align: center;
+            font-size: 11px; color: rgba(255,255,255,0.75);
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+        }
+
         .toast {
             position: fixed; bottom: 30px; left: 50%;
             transform: translateX(-50%) translateY(100px);
@@ -582,6 +588,8 @@
             </div>
         </div>
     </div>
+
+    <div class="versao">Nail Studio Pro • versão 1.4 (27/09)</div>
 
     <!-- Modal de Configuração -->
     <div class="modal-overlay" id="configModal">
@@ -1270,7 +1278,14 @@
                     navigator.serviceWorker.getRegistrations()
                         .then(rs => rs.forEach(r => r.unregister())).catch(() => {});
                 } else if (location.protocol === 'https:') {
-                    navigator.serviceWorker.register('sw.js').catch(() => {});
+                    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+                        .then(reg => reg.update()).catch(() => {});
+                    // Quando uma versão nova assume, recarrega uma vez para mostrá-la
+                    const tinhaControle = !!navigator.serviceWorker.controller;
+                    let recarregou = false;
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        if (tinhaControle && !recarregou) { recarregou = true; location.reload(); }
+                    });
                 }
             }
         });

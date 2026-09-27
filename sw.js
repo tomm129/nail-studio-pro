@@ -1,5 +1,5 @@
 // Rede primeiro (pega sempre a versão mais nova); cache só quando estiver offline.
-const CACHE = 'nail-studio-pro-v3';
+const CACHE = 'nail-studio-pro-v4';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,8 +16,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // 'no-cache' = sempre confere com o servidor se tem versão nova (não usa cópia de até 10 min)
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })
       .then(resp => {
         const copia = resp.clone();
         caches.open(CACHE).then(c => c.put(e.request, copia));
