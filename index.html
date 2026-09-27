@@ -79,12 +79,12 @@
         }
 
         .nav-btn {
-            flex: 1;
-            min-width: 72px;
-            padding: 12px 6px;
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 12px 4px;
             background: none;
             border: none;
-            font-size: 13px;
+            font-size: 12.5px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
@@ -107,7 +107,9 @@
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
 
-        input, select {
+        textarea { resize: vertical; min-height: 70px; font-family: inherit; border-radius: 18px !important; }
+
+        input, select, textarea {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #e9ecef;
@@ -126,7 +128,30 @@
             cursor: pointer;
         }
 
-        input:focus, select:focus {
+        .edit-btn {
+            background: #667eea; color: white; border: none;
+            padding: 5px 10px; border-radius: 12px;
+            cursor: pointer; font-size: 12px; float: right; margin-right: 6px;
+            transition: all 0.3s ease;
+        }
+        .edit-btn:hover { background: #5a67d8; transform: scale(1.05); }
+        .client-obs {
+            margin-top: 8px; padding: 8px 12px; background: #fff7fa;
+            border-radius: 10px; font-size: 13px; color: #6d4c5c; white-space: pre-wrap;
+        }
+        .form-editando {
+            background: #f3f0ff; border-radius: 18px; padding: 15px; margin-bottom: 20px;
+            box-shadow: 0 0 0 2px #667eea inset;
+        }
+        .editando-aviso { font-weight: bold; color: #5a67d8; margin-bottom: 12px; display: none; }
+        .form-editando .editando-aviso { display: block; }
+        .btn-cancelar {
+            width: 100%; padding: 12px; background: #eee; color: #555; border: none;
+            border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; display: none;
+        }
+        .form-editando .btn-cancelar { display: block; }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #ff6b9d;
             background: white;
@@ -523,6 +548,7 @@
             <!-- Tab Clientes -->
             <div id="clientes" class="tab-content">
                 <form id="clienteForm">
+                    <div class="editando-aviso" id="editandoAviso">✏️ Editando cliente</div>
                     <div class="form-group">
                         <label for="nomeCliente">👤 Nome Completo</label>
                         <input type="text" id="nomeCliente" placeholder="Digite o nome completo" required>
@@ -535,7 +561,12 @@
                         <label for="emailCliente">✉️ Email</label>
                         <input type="email" id="emailCliente" placeholder="cliente@email.com">
                     </div>
-                    <button type="submit" class="btn">➕ Cadastrar Cliente</button>
+                    <div class="form-group">
+                        <label for="obsCliente">📝 Observações</label>
+                        <textarea id="obsCliente" placeholder="Ex: alergia a acetona, prefere unha quadrada, cor favorita..."></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="btnCliente">➕ Cadastrar Cliente</button>
+                    <button type="button" class="btn-cancelar" onclick="cancelarEdicaoCliente()">Cancelar edição</button>
                 </form>
                 <div id="listaClientes"></div>
             </div>
@@ -743,8 +774,8 @@
         }
 
         // ===== Clientes =====
-        function adicionarCliente(nome, telefone, email) {
-            const c = { id: nextClienteId++, nome, telefone: telefone || '', email: email || '' };
+        function adicionarCliente(nome, telefone, email, obs) {
+            const c = { id: nextClienteId++, nome, telefone: telefone || '', email: email || '', obs: obs || '' };
             clientes.push(c);
             clientes.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
             atualizarSelectClientes(); atualizarEstatisticas(); salvarDados();
@@ -775,17 +806,45 @@
             lista.innerHTML = clientes.map(c => `
                 <div class="client-card">
                     <button class="delete-btn" onclick="removerCliente(${c.id})" title="Remover cliente">✕</button>
+                    <button class="edit-btn" onclick="editarCliente(${c.id})" title="Editar dados">✏️ Editar</button>
                     <div class="client-name">${escapeHtml(c.nome)}</div>
                     <div class="client-details">
-                        ${c.telefone ? `📱 ${escapeHtml(c.telefone)}` : ''}
+                        ${c.telefone ? `📱 ${escapeHtml(c.telefone)}` : '📱 <i style="color:#bbb">sem telefone</i>'}
                         ${c.email ? `<br>✉️ ${escapeHtml(c.email)}` : ''}
                         <br>📊 ${contarAgendamentosDoCliente(c)} agendamento(s)
                     </div>
+                    ${c.obs ? `<div class="client-obs">📝 ${escapeHtml(c.obs)}</div>` : ''}
                     ${c.telefone ? `<a class="whatsapp-btn" href="${linkWhatsApp(c.telefone)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
                 </div>`).join('');
         }
+        let editandoClienteId = null;
+
+        function editarCliente(id) {
+            const c = clientes.find(x => x.id === id);
+            if (!c) return;
+            editandoClienteId = id;
+            document.getElementById('nomeCliente').value = c.nome;
+            document.getElementById('telefoneCliente').value = c.telefone || '';
+            document.getElementById('emailCliente').value = c.email || '';
+            document.getElementById('obsCliente').value = c.obs || '';
+            document.getElementById('btnCliente').textContent = '💾 Salvar alterações';
+            const form = document.getElementById('clienteForm');
+            form.classList.add('form-editando');
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('telefoneCliente').focus({ preventScroll: true });
+        }
+
+        function cancelarEdicaoCliente() {
+            editandoClienteId = null;
+            const form = document.getElementById('clienteForm');
+            form.reset();
+            form.classList.remove('form-editando');
+            document.getElementById('btnCliente').textContent = '➕ Cadastrar Cliente';
+        }
+
         function removerCliente(id) {
             if (confirm('Tem certeza que deseja remover este cliente?')) {
+                if (editandoClienteId === id) cancelarEdicaoCliente();
                 clientes = clientes.filter(c => c.id !== id);
                 atualizarSelectClientes(); atualizarEstatisticas(); renderizarClientes(); salvarDados();
             }
@@ -1143,13 +1202,35 @@
             const nome = document.getElementById('nomeCliente').value.trim();
             const telefone = document.getElementById('telefoneCliente').value.trim();
             const email = document.getElementById('emailCliente').value.trim();
+            const obs = document.getElementById('obsCliente').value.trim();
             if (!nome) { alert('Por favor, digite o nome do cliente!'); return; }
-            if (clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase())) { alert('Já existe um cliente com este nome!'); return; }
-            adicionarCliente(nome, telefone, email);
-            this.reset(); renderizarClientes();
+            if (clientes.find(c => c.id !== editandoClienteId && c.nome.toLowerCase() === nome.toLowerCase())) {
+                alert('Já existe um cliente com este nome!'); return;
+            }
+
             const btn = this.querySelector('.btn');
+            let msg;
+            if (editandoClienteId) {
+                const c = clientes.find(x => x.id === editandoClienteId);
+                const nomeAntigo = c.nome;
+                Object.assign(c, { nome, telefone, email, obs });
+                // Agendamentos são ligados à cliente pelo nome: acompanha a mudança
+                if (nomeAntigo !== nome) {
+                    agendamentos.forEach(a => { if (a.nome === nomeAntigo) a.nome = nome; });
+                }
+                clientes.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+                salvarDados();
+                atualizarSelectClientes();
+                cancelarEdicaoCliente();
+                msg = '✅ Dados atualizados!';
+            } else {
+                adicionarCliente(nome, telefone, email, obs);
+                this.reset();
+                msg = '✅ Cliente Cadastrado!';
+            }
+            renderizarClientes();
             const txt = btn.textContent;
-            btn.textContent = '✅ Cliente Cadastrado!'; btn.style.background = '#28a745';
+            btn.textContent = msg; btn.style.background = '#28a745';
             setTimeout(() => { btn.textContent = txt; btn.style.background = ''; }, 1200);
         });
 
